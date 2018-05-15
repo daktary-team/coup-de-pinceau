@@ -55,13 +55,16 @@
                                     onSubmit: e => {
                                         e.preventDefault();
                                         const repo = e.target.querySelector('input').value;
-                                        const owner = user.login.toLowerString()
+                                        const owner = user.login.toLowerCase()
 
-                                        console.log('name', name);
+                                        const referenceIndexMd = {
+                                            owner: 'daktary-team',
+                                            repo: 'coup-de-pinceau',
+                                            path: 'index.md'
+                                        }
 
                                         octokit.repos.create({
-                                            name, 
-                                            description,
+                                            name: repo, 
                                             homepage: `https://${owner}.github.io/${repo}/`,
                                             has_issues: false, 
                                             has_projects: false, 
@@ -69,16 +72,15 @@
                                             auto_init: false,
                                             // license_template,
                                         })
-                                        .then(() => {
-                                            //return octokit.gitdata.createReference({
-                                            //    owner, repo, 
-                                            //    ref:'refs/heads/gh-pages', 
-                                            //    sha
-                                            //})
-                                        })    
-
-
-
+                                        .then(() => octokit.repos.getContent(referenceIndexMd)
+                                            .then( ( {data: {content}} ) => octokit.repos.createFile({
+                                                owner,
+                                                repo,
+                                                path: referenceIndexMd.path,
+                                                message: `Création du fichier ${referenceIndexMd.path}`,
+                                                content
+                                            }))
+                                        )    
                                     }
                                 },
                                 [
@@ -99,8 +101,8 @@
                     const destination = 'https://daktary-team.github.io/coup-de-pinceau'
                     const redirect_url = 'https://file-moi-les-clefs.herokuapp.com/gh-callback'
 
-                    const a = Bouture.a({href: `https://github.com/login/oauth/authorize?client_id=${client_id}&scope=public_repo&redirect_uri=${redirect_url}?destination=${destination}`}).getElement()
-
+                    const a = Bouture.a({href: `https://github.com/login/oauth/authorize?client_id=${client_id}&scope=public_repo&redirect_uri=${redirect_url}?destination=${destination}`}, 'Login with Github').getElement()
+console.log('a', a)
                     main.append(a)
                 }
             }, {once: true})
