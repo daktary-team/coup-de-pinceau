@@ -12,14 +12,22 @@
         <link rel="stylesheet" href="https://rawgit.com/twbs/bootstrap/v4-dev/dist/css/bootstrap-reboot.css">
 
         <script crossorigin="anonymous" src="https://cdn.polyfill.io/v2/polyfill.min.js?features=all"></script>
+        <script crossorigin="anonymous" src="./javascript/octokit-rest.min.js"></script>
+
         <script>
             const access_token = (new URL(document.location)).searchParams.get('access_token')
             if (access_token) {
-                fetch(`https://api.github.com/user?access_token=${access_token}`)
-                    .then(response => response.json())
-                    .then(user => console.log('user', user))
-                    .catch(err => console.error('api error', err))
-                
+                const octokit = new Octokit()
+
+                octokit.authenticate({
+                    type: 'oauth',
+                    token: access_token
+                })
+
+                octokit.users.get({})
+                .then(({data: user}) => console.log('user', user))
+                .catch(err => console.error('api error', err))
+
             } else {
                 console.log('no-token')
             }
