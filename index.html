@@ -13,30 +13,112 @@
 
         <script crossorigin="anonymous" src="https://cdn.polyfill.io/v2/polyfill.min.js?features=all"></script>
         <script crossorigin="anonymous" src="./javascript/octokit-rest.min.js"></script>
+        <script crossorigin="anonymous" src="./javascript/bouture.js"></script>
+
+        <style>
+            body{
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+
+                background: url('https://png.pngtree.com/element_origin_min_pic/17/02/27/3c41f2373db576e9641e00950ef25a20.jpg');
+                padding: 0 20%
+            }
+
+            body > * {
+                max-width: 60em;
+            }
+        </style>
 
         <script>
+            'use strict';
+
             const access_token = (new URL(document.location)).searchParams.get('access_token')
-            if (access_token) {
-                const octokit = new Octokit()
 
-                octokit.authenticate({
-                    type: 'oauth',
-                    token: access_token
-                })
+            document.addEventListener('DOMContentLoaded', e => {
+                const main = document.querySelector('main')
 
-                octokit.users.get({})
-                .then(({data: user}) => console.log('user', user))
-                .catch(err => console.error('api error', err))
+                if (access_token) {
+                    const octokit = new Octokit()
 
-            } else {
-                console.log('no-token')
-            }
+                    octokit.authenticate({
+                        type: 'oauth',
+                        token: access_token
+                    })
+
+                    octokit.users.get({})
+                    .then(({data: user}) => {
+                        const el = Bouture.div([
+                            Bouture.p(`Hey ! Bienvenue dans coup de pinceau ! On a detecté que tu es connecté en tant que l'utilisateur Github @${user.login}`), 
+                            Bouture.form(
+                                {
+                                    onSubmit: e => {
+                                        e.preventDefault();
+                                        const repo = e.target.querySelector('input').value;
+                                        const owner = user.login.toLowerString()
+
+                                        console.log('name', name);
+
+                                        octokit.repos.create({
+                                            name, 
+                                            description,
+                                            homepage: `https://${owner}.github.io/${repo}/`,
+                                            has_issues: false, 
+                                            has_projects: false, 
+                                            has_wiki: false,
+                                            auto_init: false,
+                                            // license_template,
+                                        })
+                                        .then(() => {
+                                            //return octokit.gitdata.createReference({
+                                            //    owner, repo, 
+                                            //    ref:'refs/heads/gh-pages', 
+                                            //    sha
+                                            //})
+                                        })    
+
+
+
+                                    }
+                                },
+                                [
+                                    Bouture
+                                        .label(`Donne-nous le nom du dépôt à créer et publier sur ton compte github`)
+                                        .input({type: 'text'}),
+                                    Bouture.button({type: 'submit'}, 'Créer le dépôt !')
+                                ]
+                            )   
+                        ]).getElement()
+
+                        main.append(el)
+                    })
+                    .catch(err => console.error('api error', err))
+
+                } else {
+                    const client_id = '2b4ed9ba835b05f83e2d'
+                    const destination = 'https://daktary-team.github.io/coup-de-pinceau'
+                    const redirect_url = 'https://file-moi-les-clefs.herokuapp.com/gh-callback'
+
+                    const a = Bouture.a({href: `https://github.com/login/oauth/authorize?client_id=${client_id}&scope=public_repo&redirect_uri=${redirect_url}?destination=${destination}`}).getElement()
+
+                    main.append(a)
+                }
+            }, {once: true})
+
+            
         </script>
     </head>
 
     <body>
-        <h1>Bienvenue sur Coup de pinceau</h1>
-        <p>Publiez vos contenus markdown en un clic.</p>
-        <a href="https://github.com/login/oauth/authorize?client_id=2b4ed9ba835b05f83e2d&scope=public_repo&redirect_uri=https://file-moi-les-clefs.herokuapp.com/gh-callback?destination=https://daktary-team.github.io/coup-de-pinceau">Login with Github</button>
+        <header>
+            <h1>Bienvenue sur Coup de pinceau</h1>
+            <p>Publiez vos contenus markdown en un clic.</p>
+        </header>
+        <main>
+            
+        </main>
+        <footer>
+
+        </footer>
     </body>
 </html>
