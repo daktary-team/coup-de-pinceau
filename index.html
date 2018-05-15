@@ -12,11 +12,24 @@
         <link rel="stylesheet" href="https://rawgit.com/twbs/bootstrap/v4-dev/dist/css/bootstrap-reboot.css">
 
         <script crossorigin="anonymous" src="https://cdn.polyfill.io/v2/polyfill.min.js?features=all"></script>
+        <script>
+            const access_token = (new URL(document.location)).searchParams.get('access_token')
+            if (access_token) {
+                fetch(`https://api.github.com/user?access_token=${access_token}`)
+                    .then(response => response.json())
+                    .then(user => console.log('user', user))
+                    .catch(err => console.error('api error', err))
+
+                
+            } else {
+                console.log('no-token')
+            }
+        </script>
     </head>
 
     <body>
         <h1>Bienvenue sur Coup de pinceau</h1>
         <p>Publiez vos contenus markdown en un clic.</p>
-        <a href=https://github.com/login/oauth/authorize?client_id=2b4ed9ba835b05f83e2d&scope=public_repo&redirect_url=https://file-moi-les-clefs.herokuapp.com/gh-callback?destination=https://daktary-team.github.io/coup-de-pinceau>Login with Github</button>
+        <a href="https://github.com/login/oauth/authorize?client_id=2b4ed9ba835b05f83e2d&scope=public_repo&redirect_uri=https://file-moi-les-clefs.herokuapp.com/gh-callback?destination=https://daktary-team.github.io/coup-de-pinceau">Login with Github</button>
     </body>
 </html>
