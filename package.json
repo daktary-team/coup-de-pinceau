@@ -1,0 +1,24 @@
+{
+  "name": "coup-de-pinceau",
+  "version": "1.0.0",
+  "description": "Publier facilement ses ressources rédigées sur Github.",
+  "main": "index.js",
+  "scripts": {
+    "start": "serve",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daktary-team/coup-de-pinceau.git"
+  },
+  "keywords": [],
+  "author": "David Bruant <bruant.d@gmail.com> (https://twitter.com/DavidBruant)",
+  "license": "CC0-1.0",
+  "bugs": {
+    "url": "https://github.com/daktary-team/coup-de-pinceau/issues"
+  },
+  "homepage": "https://github.com/daktary-team/coup-de-pinceau#readme",
+  "devDependencies": {
+    "serve": "^6.4.0"
+  }
+}

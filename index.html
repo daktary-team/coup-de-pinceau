@@ -12,24 +12,198 @@
         <link rel="stylesheet" href="https://rawgit.com/twbs/bootstrap/v4-dev/dist/css/bootstrap-reboot.css">
 
         <script crossorigin="anonymous" src="https://cdn.polyfill.io/v2/polyfill.min.js?features=all"></script>
+        <script crossorigin="anonymous" src="./javascript/octokit-rest.min.js"></script>
+        <script crossorigin="anonymous" src="./javascript/bouture.js"></script>
+
+        <style>
+            body{
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+
+                background: url('https://png.pngtree.com/element_origin_min_pic/17/02/27/3c41f2373db576e9641e00950ef25a20.jpg');
+                padding: 0 20%
+            }
+
+            body > * {
+                max-width: 60em;
+            }
+        </style>
+
         <script>
+            'use strict';
+
             const access_token = (new URL(document.location)).searchParams.get('access_token')
-            if (access_token) {
-                fetch(`https://api.github.com/user?access_token=${access_token}`)
-                    .then(response => response.json())
-                    .then(user => console.log('user', user))
+
+            document.addEventListener('DOMContentLoaded', e => {
+                const main = document.querySelector('main')
+
+                if (access_token) {
+                    const octokit = new Octokit()
+
+                    octokit.authenticate({
+                        type: 'oauth',
+                        token: access_token
+                    })
+
+                    octokit.users.get({})
+                    .then(({data: user}) => {
+                        const el = Bouture.div([
+                            Bouture.p(`Hey ! Bienvenue dans coup de pinceau ! On a detecté que tu es connecté en tant que l'utilisateur Github @${user.login}`), 
+                            Bouture.form(
+                                {
+                                    onSubmit: e => {
+                                        e.preventDefault();
+                                        const repo = e.target.querySelector('input').value;
+                                        const owner = user.login.toLowerCase()
+
+                                        const referenceIndexMd = {
+                                            owner: 'daktary-team',
+                                            repo: 'coup-de-pinceau',
+                                            path: 'index.md'
+                                        }
+
+                                        const publishedWebsiteURL = `https://${owner}.github.io/${repo}/`
+
+                                        // Create the new repo
+                                        octokit.repos.create({
+                                            name: repo, 
+                                            homepage: publishedWebsiteURL,
+                                            has_issues: false, 
+                                            has_projects: false, 
+                                            has_wiki: false,
+                                            auto_init: false,
+                                            // license_template,
+                                        })
+                                        // Add an index.md
+                                        .then(() => octokit.repos.getContent(referenceIndexMd)
+                                            .then( ( {data: {content}} ) => octokit.repos.createFile({
+                                                owner,
+                                                repo,
+                                                path: referenceIndexMd.path,
+                                                message: `Création du fichier ${referenceIndexMd.path}`,
+                                                content
+                                            }))
+                                        )
+                                        // Create a _config.yml and pick a default theme
+                                        .then(() => octokit.repos.createFile({
+                                            owner,
+                                            repo,
+                                            path: '_config.yml',
+                                            message: `Création du fichier _config.yml`,
+                                            content: btoa(`theme: jekyll-theme-cayman`)
+                                        }))
+                                        // Create a _config.yml and pick a default theme
+                                        .then(() => octokit.repos.createFile({
+                                            owner,
+                                            repo,
+                                            path: 'exemple.md',
+                                            message: `Création de la page d'exemple`,
+                                            content: btoa(
+                                                '# Exemple de titre\n\n' + 
+                                                'Hey ! Voici un contenu en [markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet#table-of-contents)'
+                                            )
+                                        }))
+                                        // Publish the repo (by creating a gh-pages branch)
+                                        .then(({data: {commit: {sha}}}) => octokit.gitdata.createReference({
+                                            owner, 
+                                            repo, 
+                                            ref: 'refs/heads/gh-pages', 
+                                            sha
+                                        }))
+                                        // Make gh-pages branch the default
+                                        .then(() => octokit.repos.edit({
+                                            owner, 
+                                            repo, 
+                                            name: repo, 
+                                            default_branch: 'gh-pages'
+                                        }))
+                                        // Delete master branch
+                                        .then(() => octokit.gitdata.deleteReference({
+                                            owner, 
+                                            repo, 
+                                            ref: 'heads/master', 
+                                        }))
+                                        // all done, let's display the link to the blog
+                                        .then(() => {
+                                            console.log('success!')
+
+                                            return new Promise((resolve, reject) => {
+                                                
+                                                (function checkIfBuilt(){
+                                                    return octokit.repos.getPages({owner, repo})
+                                                    .then(({data: {status}}) => {
+                                                        console.log('build status', status)
+                                                        if(status === 'built'){
+                                                            resolve()
+                                                            return;
+                                                        }
+                                                        if(status === 'errored'){
+                                                            reject(new Error('Github pages build error'))
+                                                            return;
+                                                        }
+
+                                                        setTimeout(checkIfBuilt, 500)
+                                                    })
+                                                    .catch(reject)
+                                                })()
+                                                    
+                                            })
+                                            .then( () => {
+                                                document.querySelector('form').replaceWith(
+                                                    Bouture.div([
+                                                        Bouture.span(`Bonne nouvelle ! Le `),
+                                                        Bouture.a({href: `https://github.com/${owner}/${repo}/`}, 'dépôt github'),
+                                                        Bouture.span(` a été créé et le `),
+                                                        Bouture.a({href: publishedWebsiteURL}, `site a été publié ! `)
+                                                    ]).getElement()
+                                                )
+                                            })
+                                            
+                                        }) 
+                                        .catch(err => console.error('Error while trying to publish a github repo', err))
+
+                                    }
+                                },
+                                [
+                                    Bouture
+                                        .label(`Donne-nous le nom du dépôt à créer et publier sur ton compte github`)
+                                        .input({type: 'text'}),
+                                    Bouture.button({type: 'submit'}, 'Créer le dépôt !')
+                                ]
+                            )   
+                        ]).getElement()
+
+                        main.append(el)
+                    })
                     .catch(err => console.error('api error', err))
 
-                
-            } else {
-                console.log('no-token')
-            }
+                } else {
+                    const client_id = '2b4ed9ba835b05f83e2d'
+                    const destination = 'https://daktary-team.github.io/coup-de-pinceau'
+                    const redirect_url = 'https://file-moi-les-clefs.herokuapp.com/gh-callback'
+
+                    const a = Bouture.a({href: `https://github.com/login/oauth/authorize?client_id=${client_id}&scope=public_repo&redirect_uri=${redirect_url}?destination=${destination}`}, 'Login with Github').getElement()
+                    
+                    console.log('a', a)
+                    main.append(a)
+                }
+            }, {once: true})
+
+            
         </script>
     </head>
 
     <body>
-        <h1>Bienvenue sur Coup de pinceau</h1>
-        <p>Publiez vos contenus markdown en un clic.</p>
-        <a href="https://github.com/login/oauth/authorize?client_id=2b4ed9ba835b05f83e2d&scope=public_repo&redirect_uri=https://file-moi-les-clefs.herokuapp.com/gh-callback?destination=https://daktary-team.github.io/coup-de-pinceau">Login with Github</button>
+        <header>
+            <h1>Bienvenue sur Coup de pinceau</h1>
+            <p>Publiez vos contenus markdown en un clic.</p>
+        </header>
+        <main>
+            
+        </main>
+        <footer>
+
+        </footer>
     </body>
 </html>
