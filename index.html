@@ -21,8 +21,19 @@
                 flex-direction: column;
                 align-items: stretch;
 
-                background: url('https://png.pngtree.com/element_origin_min_pic/17/02/27/3c41f2373db576e9641e00950ef25a20.jpg');
                 padding: 0 20%
+            }
+            
+            body::after {
+                content: "";
+                background: url('https://png.pngtree.com/element_origin_min_pic/17/02/27/3c41f2373db576e9641e00950ef25a20.jpg');
+                opacity: 0.15;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                right: 0;
+                position: absolute;
+                z-index: -1;   
             }
 
             body > * {
