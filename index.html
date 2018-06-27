@@ -16,12 +16,57 @@
         <script crossorigin="anonymous" src="./javascript/bouture.js"></script>
 
         <style>
-            body{
+            /* Reset just the minimum, improve with time */
+
+            body {
+                margin: 0;
+            }
+
+            /*Titles*/
+            h1,
+            h2,
+            h3,
+            h4,
+            h5 {
+                margin-top: 0;
+                margin-bottom: 0;
+            }
+
+            /*Forms*/
+            fieldset {
+                padding: 0;
+                margin-right: 0;
+                margin-left: 0;
+                border: none;
+            }
+
+            /*Lists*/
+            ul {
+                margin-top: 0;
+                margin-bottom: 0;
+                padding-left: 0;
+            }
+
+            /*
+            GENERAL
+            */
+            * {
+                -webkit-box-sizing: border-box;
+                -moz-box-sizing: border-box;
+                box-sizing: border-box;
+            }
+
+            body {
                 display: flex;
                 flex-direction: column;
                 align-items: stretch;
-
-                padding: 0 20%
+                background: rgb(252, 249, 255);
+                font-family: "Open Sans", Arial, sans-serif;
+                font-size: 1rem;
+                line-height: 1.2;
+                color: #4d4d4d;
+                -webkit-font-smoothing: antialiased;
+                border-top: 3px solid #29abe2;
             }
             
             body::after {
