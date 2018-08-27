@@ -200,6 +200,21 @@
                                 .input({type: 'text', value: repo}),
                             Bouture.button({type: 'submit'}, 'Créer le dépôt !'),
                         ]
+                    ),
+                    Bouture.form(
+                        {
+                          onSubmit: evt => {
+                              evt.preventDefault()
+                              console.log('Ok: j\'ouvre ton dépôt')
+
+                          }
+                        },
+                        [
+                            Bouture
+                                .label(`Tu peux aussi sélectionner un dépôt à créer et publier sur ton compte github`)
+                                .select(['TT', 'Repo1', 'tootooyootoo'].map(name => Bouture.option(name))),
+                            Bouture.button({type: 'submit'}, 'Utiliser ce dépôt !'),
+                        ]
                     )   
                 ]).getElement()
             }
