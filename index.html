@@ -16,11 +16,6 @@
         <script crossorigin="anonymous" src="./javascript/octokit-rest.min.js"></script>
         <script crossorigin="anonymous" src="./javascript/bouture.js"></script>
 
-        <!-- 
-            TODO : add redux
-
-        -->
-
         <style>
             body{
                 display: flex;
@@ -50,7 +45,26 @@
         <script>
             'use strict';
 
-            function RepoNameForm(user, access_token){
+            function WelcomeMessage(name){
+                return Bouture.p(`Hey ! Bienvenue dans coup de pinceau ! On a detecté que tu es connecté en tant que l'utilisateur Github @${name}`)
+            }
+
+            function PublicationSuccessMessage(owner, repo){
+                const publishedWebsiteURL = makeGithubPagesPublishedWebsiteURL(owner, repo)
+
+                return Bouture.div([
+                    Bouture.span(`Bonne nouvelle ! Le `),
+                    Bouture.a({href: `https://github.com/${owner}/${repo}/`}, 'dépôt github'),
+                    Bouture.span(` a été créé et le `),
+                    Bouture.a({href: publishedWebsiteURL}, `site a été publié ! `)
+                ]).getElement()
+            }
+
+            function makeGithubPagesPublishedWebsiteURL(owner, repo){
+                return `https://${owner}.github.io/${repo}/`
+            }
+
+            function RepoNameForm(user, access_token, repo){
                 const octokit = new Octokit()
 
                 octokit.authenticate({
@@ -59,7 +73,7 @@
                 })
 
                 return Bouture.div([
-                    Bouture.p(`Hey ! Bienvenue dans coup de pinceau ! On a detecté que tu es connecté en tant que l'utilisateur Github @${user.login}`), 
+                    WelcomeMessage(user.login), 
                     Bouture.form(
                         {
                             onSubmit: e => {
@@ -73,7 +87,13 @@
                                     path: 'index.md'
                                 }
 
-                                const publishedWebsiteURL = `https://${owner}.github.io/${repo}/`
+                                const publishedWebsiteURL = makeGithubPagesPublishedWebsiteURL(owner, repo)
+
+                                store.dispatch({
+                                    type: 'SITE_PUBLICATION_REQUESTED',
+                                    owner,
+                                    repo,
+                                })
 
                                 // Create the new repo
                                 octokit.repos.create({
@@ -136,7 +156,6 @@
                                 }))
                                 // all done, let's display the link to the blog
                                 .then(() => {
-                                    console.log('success!')
 
                                     return new Promise((resolve, reject) => {
                                         
@@ -160,25 +179,25 @@
                                             
                                     })
                                     .then( () => {
-                                        document.querySelector('form').replaceWith(
-                                            Bouture.div([
-                                                Bouture.span(`Bonne nouvelle ! Le `),
-                                                Bouture.a({href: `https://github.com/${owner}/${repo}/`}, 'dépôt github'),
-                                                Bouture.span(` a été créé et le `),
-                                                Bouture.a({href: publishedWebsiteURL}, `site a été publié ! `)
-                                            ]).getElement()
-                                        )
+                                        store.dispatch({
+                                            type: 'SITE_PUBLICATION_SUCCESS',
+                                        })
                                     })
                                     
                                 }) 
-                                .catch(err => console.error('Error while trying to publish a github repo', err))
+                                .catch(err => {
+                                    store.dispatch({
+                                        type: 'SITE_PUBLICATION_ERROR',
+                                        error: err
+                                    })
+                                })
 
                             }
                         },
                         [
                             Bouture
                                 .label(`Donne-nous le nom du dépôt à créer et publier sur ton compte github`)
-                                .input({type: 'text'}),
+                                .input({type: 'text', value: repo}),
                             Bouture.button({type: 'submit'}, 'Créer le dépôt !'),
                         ]
                     )   
@@ -198,16 +217,30 @@
                 const destination = 'https://daktary-team.github.io/coup-de-pinceau'
                 const redirect_url = 'https://file-moi-les-clefs.herokuapp.com/gh-callback'
 
+                const {owner, repo, access_token, user, publishing} = state
+
                 const main = document.querySelector('main')
-                    
-                main.append(state.user ?
-                    RepoNameForm(state.user, state.access_token) :
-                    LoginLink(client_id, redirect_url, destination)
-                )
+                main.innerHTML = '';
+                
+                switch(publishing){
+                    case 'ERROR': 
+                        // TODO error
+                        return;
+                    case 'PUBLISHED':
+                        main.append(PublicationSuccessMessage(owner, repo))
+                        return;
+                    case 'IN_PROGRESS': // TODO loader
+                    default: 
+                        main.append(user ?
+                            RepoNameForm(user, access_token, repo) :
+                            LoginLink(client_id, redirect_url, destination)
+                        )
+                }
             }
 
 
             function reducer(state, action){
+                console.log('action type', action.type)
                 switch (action.type) {
                     case 'USER_DATA_RETRIEVED':
                         return Object.assign(state, {
@@ -217,12 +250,19 @@
                     case 'SITE_PUBLICATION_REQUESTED': 
                         return Object.assign(state, {
                             publishing: 'IN_PROGRESS',
-                            repoName: state.repoName
+                            repo: action.repo,
+                            owner: action.owner
                         });
 
-                    case 'SITE_PUBLISHED': 
+                    case 'SITE_PUBLICATION_SUCCESS': 
                         return Object.assign(state, {
                             publishing: 'PUBLISHED'
+                        })
+
+                    case 'SITE_PUBLICATION_ERROR': 
+                        return Object.assign(state, {
+                            publishing: 'ERROR',
+                            error: action.error
                         })
 
                     default:
@@ -233,13 +273,13 @@
 
             const store = Redux.createStore(reducer, {
                 user: undefined,
-                publishing: undefined, // 'IN_PROGRESS' | 'PUBLISHED',
-                repoName: undefined,
+                publishing: undefined, // 'IN_PROGRESS' | 'PUBLISHED' | 'ERROR'
+                owner: undefined,
+                repo: undefined,
                 access_token: (new URL(document.location)).searchParams.get('access_token')
             })
 
             store.subscribe(() => render(store.getState()))
-
 
             document.addEventListener('DOMContentLoaded', e => {
                 const { access_token } = store.getState();
