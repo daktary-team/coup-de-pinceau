@@ -64,7 +64,7 @@
                 return `https://${owner}.github.io/${repo}/`
             }
 
-            function RepoNameForm(user, access_token, repo){
+            function RepoNameForm(user, access_token, repo, repos){
                 const octokit = new Octokit()
 
                 octokit.authenticate({
@@ -201,6 +201,7 @@
                             Bouture.button({type: 'submit'}, 'Créer le dépôt !'),
                         ]
                     ),
+                    repos ? 
                     Bouture.form(
                         {
                           onSubmit: evt => {
@@ -212,10 +213,10 @@
                         [
                             Bouture
                                 .label(`Tu peux aussi sélectionner un dépôt à créer et publier sur ton compte github`)
-                                .select(['TT', 'Repo1', 'tootooyootoo'].map(name => Bouture.option(name))),
+                                .select(repos.map(name => Bouture.option(name))),
                             Bouture.button({type: 'submit'}, 'Utiliser ce dépôt !'),
                         ]
-                    )   
+                    ) : '' 
                 ]).getElement()
             }
 
@@ -232,7 +233,7 @@
                 const destination = 'https://daktary-team.github.io/coup-de-pinceau'
                 const redirect_url = 'https://file-moi-les-clefs.herokuapp.com/gh-callback'
 
-                const {owner, repo, access_token, user, publishing} = state
+                const {owner, repo, repos, access_token, user, publishing} = state
 
                 const main = document.querySelector('main')
                 main.innerHTML = '';
@@ -240,14 +241,14 @@
                 switch(publishing){
                     case 'ERROR': 
                         // TODO error
-                        return;
+                        return
                     case 'PUBLISHED':
                         main.append(PublicationSuccessMessage(owner, repo))
-                        return;
+                        return
                     case 'IN_PROGRESS': // TODO loader
                     default: 
                         main.append(user ?
-                            RepoNameForm(user, access_token, repo) :
+                            RepoNameForm(user, access_token, repo, repos) :
                             LoginLink(client_id, redirect_url, destination)
                         )
                 }
@@ -261,13 +262,18 @@
                         return Object.assign(state, {
                             user: action.user
                         })
+                    
+                    case 'USER_REPOS_DATA_RETRIEVED':
+                        return Object.assign(state, {
+                            repos: action.repos
+                        })
                         
                     case 'SITE_PUBLICATION_REQUESTED': 
                         return Object.assign(state, {
                             publishing: 'IN_PROGRESS',
                             repo: action.repo,
                             owner: action.owner
-                        });
+                        })
 
                     case 'SITE_PUBLICATION_SUCCESS': 
                         return Object.assign(state, {
@@ -291,6 +297,7 @@
                 publishing: undefined, // 'IN_PROGRESS' | 'PUBLISHED' | 'ERROR'
                 owner: undefined,
                 repo: undefined,
+                repos: undefined,
                 access_token: (new URL(document.location)).searchParams.get('access_token')
             })
 
@@ -308,13 +315,21 @@
                     })
 
                     octokit.users.get({})
-                    .then(({data: user}) => {
-                        store.dispatch({
-                            type: 'USER_DATA_RETRIEVED',
-                            user
+                        .then(({data: user}) => {
+                            store.dispatch({
+                                type: 'USER_DATA_RETRIEVED',
+                                user
+                            })
+                            return octokit.repos.getAll()
                         })
-                    })
-                    .catch(err => console.error('api error', err))
+                        .then(({data}) => {
+                            const repos = data.map(repo => repo.name)
+                            store.dispatch({
+                                type: 'USER_REPOS_DATA_RETRIEVED',
+                                repos: repos
+                            })
+                        }) 
+                        .catch(err => console.error('api error', err))
                 }
                 else{
                     render();
