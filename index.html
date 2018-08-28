@@ -213,7 +213,7 @@
                         [
                             Bouture
                                 .label(`Tu peux aussi sélectionner un dépôt à créer et publier sur ton compte github`)
-                                .select(repos.map(name => Bouture.option(name))),
+                                .select(repos.map(({name}) => Bouture.option(name))),
                             Bouture.button({type: 'submit'}, 'Utiliser ce dépôt !'),
                         ]
                     ) : '' 
@@ -322,11 +322,10 @@
                             })
                             return octokit.repos.getAll()
                         })
-                        .then(({data}) => {
-                            const repos = data.map(repo => repo.name)
+                        .then(({data: repos}) => {
                             store.dispatch({
                                 type: 'USER_REPOS_DATA_RETRIEVED',
-                                repos: repos
+                                repos
                             })
                         }) 
                         .catch(err => console.error('api error', err))
