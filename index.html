@@ -84,6 +84,49 @@
             body > * {
                 max-width: 60em;
             }
+
+            h1 {
+                font-family: "Montserrat", Arial, sans-serif;
+            }
+
+            p {
+                margin-top: 0;
+                margin-bottom: 10px;
+                line-height: 1.5em;
+            }
+
+            a {
+                color: #29abe2;
+            }
+
+            button,
+            a {
+                padding: 5px 10px;
+                background-color: #29abe2;
+                color: #fff;
+                text-decoration: none;
+            }
+
+            input {
+                text-align: center;
+                border-bottom: 1px solid #000;
+            }
+
+            form {
+                display: flex;
+                flex-direction: column;
+            }
+
+            header,
+            main {
+                margin: 0px auto;
+                width: 620px;
+            }
+
+            main {
+                padding-top: 20px;
+            }
+
         </style>
 
         <script>
@@ -253,13 +296,23 @@
     <body>
         <header>
             <h1>Bienvenue sur Coup de pinceau</h1>
-            <p>Publiez vos contenus markdown en un clic.</p>
+            <p>Publiez vos contenus markdown en un clic</p>
         </header>
         <main>
-            
+                <div>
+                        <p>Hey ! Bienvenue dans coup de pinceau ! On a detecté que tu es connecté en tant que l'utilisateur Github @pointbar</p>
+                        <form>
+                        <label>Donne-nous le nom du dépôt à créer et publier sur ton compte github
+                        <input type="text"></label><button type="submit">Créer le dépôt !</button></form>
+                    </div>
         </main>
         <footer>
 
         </footer>
     </body>
 </html>
+
+
+<!--
+
+-->
